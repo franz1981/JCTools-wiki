@@ -1,0 +1,11 @@
+The [MessagePassingQueue](https://github.com/JCTools/JCTools/blob/master/jctools-core/src/main/java/org/jctools/queues/MessagePassingQueue.java) is the JCTools view on what should be the queue interface. It differs from the java.util.Queue in several important ways:
+ * It does not extend Collection. It's for message passing, not arbitrary storage. As an extension it does not define an iterator or offer other search methods.
+ * It expands on the **offer** and **poll** methods to provide means of different and potentially more performant interactions.
+
+The MessagePassingQueue goes beyond the generic j.u.Queue interface, and so requires the developer to commit to this new way of interacting with a queue. This goes beyond a drop in replacement of a j.u.Queue, so implication must be considered. It does however offer some new functionality which might be worth your while: 
+ * relaxedOffer/relaxedPoll: adds/removes an element to/from the queue without the strong requirement that failing to do so implies the queue is full/empty. This proves a win for MPSC/SPMC/MPMC queues where the relaxation allows for greatly reducing contention. For the SPSC case they delegate directly to normal offer/poll.
+ * fill/drain: batch offer/poll elements to/from the queue. This allows some costs to be amortised, but runs the risk of inlining behaviour changes which would remove the benefit. Worth trying, but no guaranteed benefit.
+ * Perpetual fill/drain: where it is desirable for the queue to be continuously filled or drained by a particular thread it is possible to use a fill/drain method which will take over the thread for that purpose.
+
+The perpetual drain/fill methods require the user to implement a WaitStrategy which will model the intended backoff mechanism for the thread spinning on the queue. For inspiration on different ways to implement a backoff strategy see the different stategies implemented by the [Disruptor library](https://github.com/LMAX-Exchange/disruptor/blob/master/src/main/java/com/lmax/disruptor/WaitStrategy.java) or similarly in [Agrona](https://github.com/real-logic/Agrona/blob/2ba7d3c2f1afa861929af3cbedf1c93f93521113/agrona/src/main/java/org/agrona/concurrent/IdleStrategy.java)
+
